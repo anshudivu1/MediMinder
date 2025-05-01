@@ -1,11 +1,6 @@
-//
-//  ProfileCompletionView.swift
-//  MediMinder
-//
-//  Created by Apple23 on 04/04/25.
-//
-
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct ProfileCompletionView: View {
     @EnvironmentObject var authService: AuthService
@@ -179,7 +174,7 @@ struct ProfileCompletionView: View {
                     
                     // Skip button
                     Button {
-                        saveProfile()
+                        skipProfile()
                     } label: {
                         Text("Skip for now")
                             .fontWeight(.medium)
@@ -191,17 +186,6 @@ struct ProfileCompletionView: View {
             }
             .navigationBarBackButtonHidden(true)
             .interactiveDismissDisabled()
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        saveProfile()
-                    } label: {
-                        Text("Skip")
-                            .foregroundColor(.secondary)
-                    }
-                    .disabled(isSaving)
-                }
-            }
             
             // Loading overlay
             if isSaving {
@@ -227,27 +211,7 @@ struct ProfileCompletionView: View {
             }
         }
         .onAppear {
-            if let currentUser = authService.currentUser {
-                if let age = currentUser.age {
-                    self.age = age
-                }
-                if let gender = currentUser.gender {
-                    self.gender = gender
-                }
-                self.medicalConditions = currentUser.medicalConditions
-                if let breakfastTime = currentUser.breakfastTime {
-                    self.breakfastTime = breakfastTime
-                }
-                if let lunchTime = currentUser.lunchTime {
-                    self.lunchTime = lunchTime
-                }
-                if let dinnerTime = currentUser.dinnerTime {
-                    self.dinnerTime = dinnerTime
-                }
-                if let bedtime = currentUser.bedtime {
-                    self.bedtime = bedtime
-                }
-            }
+            loadUserData()
         }
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -269,6 +233,33 @@ struct ProfileCompletionView: View {
         )
     }
     
+    private func loadUserData() {
+        // Load data from Firebase if available
+        if let currentUser = authService.currentUser {
+            if let age = currentUser.age {
+                self.age = age
+            }
+            if let gender = currentUser.gender {
+                self.gender = gender
+            }
+            self.medicalConditions = currentUser.medicalConditions
+            
+            // Load time fields if available
+            if let breakfastTime = currentUser.breakfastTime {
+                self.breakfastTime = breakfastTime
+            }
+            if let lunchTime = currentUser.lunchTime {
+                self.lunchTime = lunchTime
+            }
+            if let dinnerTime = currentUser.dinnerTime {
+                self.dinnerTime = dinnerTime
+            }
+            if let bedtime = currentUser.bedtime {
+                self.bedtime = bedtime
+            }
+        }
+    }
+    
     private func addCondition() {
         guard !newCondition.isEmpty else { return }
         
@@ -288,7 +279,7 @@ struct ProfileCompletionView: View {
     private func saveProfile() {
         isSaving = true
         
-        // Save the profile data
+        // Simply pass the Date objects directly to the AuthService - it will handle proper conversion
         authService.completeProfile(
             age: age,
             gender: gender,
@@ -300,6 +291,27 @@ struct ProfileCompletionView: View {
         )
         
         // Wait a short delay to ensure data is saved
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isSaving = false
+            onComplete() // Call the completion handler to trigger the transition
+        }
+    }
+    
+    private func skipProfile() {
+        // Mark profile as completed in Firebase without detailed data
+        isSaving = true
+        
+        // Set minimal profile data to mark as complete
+        authService.completeProfile(
+            age: age,
+            gender: gender,
+            medicalConditions: [],
+            breakfastTime: breakfastTime,
+            lunchTime: lunchTime,
+            dinnerTime: dinnerTime,
+            bedtime: bedtime
+        )
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             isSaving = false
             onComplete() // Call the completion handler to trigger the transition

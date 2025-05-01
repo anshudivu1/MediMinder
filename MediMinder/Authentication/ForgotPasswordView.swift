@@ -1,16 +1,20 @@
-import SwiftUI
-import FirebaseAuth
+//
+//  ForgotPasswordView.swift
+//  MediMinder
+//
+//  Created by SuperCharge on 30/04/25.
+//
 
-struct SignInView: View {
-    @Binding var isShowingSignUp: Bool
-    @State private var isShowingForgotPassword = false
+
+import SwiftUI
+
+struct ForgotPasswordView: View {
+    @Binding var isShowingForgotPassword: Bool
     @EnvironmentObject var authService: AuthService
     
     @State private var email = ""
-    @State private var password = ""
-    @State private var showPassword = false
     @State private var isAnimating = false
-    @State private var errorMessage: String?
+    @State private var showSuccessMessage = false
     
     var body: some View {
         VStack(spacing: 25) {
@@ -28,24 +32,33 @@ struct SignInView: View {
                     .scaleEffect(isAnimating ? 1.1 : 1.0)
                     .animation(Animation.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
                 
-                Image(systemName: "pill")
+                Image(systemName: "key.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 60, height: 60)
+                    .frame(width: 50, height: 50)
                     .foregroundColor(.blue)
             }
             .onAppear {
                 isAnimating = true
             }
             
-            Text("MediMinder")
-                .font(.system(size: 38, weight: .bold, design: .rounded))
+            Text("Password Reset")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundColor(.blue)
             
-            Text("Welcome Back")
-                .font(.title3)
-                .foregroundColor(.gray)
-                .padding(.bottom, 10)
+            if showSuccessMessage {
+                Text("Password reset link sent to your email")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .padding(.horizontal)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("Enter your email to receive a password reset link")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal)
+                    .multilineTextAlignment(.center)
+            }
             
             VStack(spacing: 16) {
                 // Email field
@@ -69,52 +82,6 @@ struct SignInView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.gray.opacity(0.1))
                 )
-                
-                // Password field
-                HStack {
-                    Image(systemName: "lock.fill")
-                        .foregroundColor(.blue)
-                        .frame(width: 30)
-                    
-                    if showPassword {
-                        TextField("", text: $password)
-                            .placeholder(when: password.isEmpty) {
-                                Text("Password").foregroundColor(.gray)
-                            }
-                            .foregroundColor(.primary)
-                    } else {
-                        SecureField("", text: $password)
-                            .placeholder(when: password.isEmpty) {
-                                Text("Password").foregroundColor(.gray)
-                            }
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Button(action: { showPassword.toggle() }) {
-                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.gray.opacity(0.1))
-                )
-            }
-            .padding(.horizontal, 30)
-            
-            // Forgot password link
-            HStack {
-                Spacer()
-                Button {
-                    withAnimation {
-                        isShowingForgotPassword = true
-                    }
-                } label: {
-                    Text("Forgot Password?")
-                        .font(.system(size: 14))
-                        .foregroundColor(.blue)
-                }
             }
             .padding(.horizontal, 30)
             
@@ -126,8 +93,8 @@ struct SignInView: View {
                     .padding(.top, 5)
             }
             
-            // Sign in button
-            Button(action: signIn) {
+            // Reset password button
+            Button(action: sendPasswordReset) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 25)
                         .fill(
@@ -144,26 +111,26 @@ struct SignInView: View {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Text("Sign In")
+                        Text("Send Reset Link")
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                     }
                 }
             }
-            .disabled(email.isEmpty || password.isEmpty || authService.isLoading)
+            .disabled(email.isEmpty || authService.isLoading)
             .padding(.horizontal, 30)
             .padding(.top, 20)
             
-            // Sign up link
+            // Back to sign in button
             Button {
                 withAnimation {
-                    isShowingSignUp = true
+                    isShowingForgotPassword = false
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Text("Don't have an account?")
+                    Text("Remember your password?")
                         .foregroundColor(.gray)
-                    Text("Sign Up")
+                    Text("Sign In")
                         .fontWeight(.semibold)
                         .foregroundColor(.blue)
                 }
@@ -174,29 +141,12 @@ struct SignInView: View {
             Spacer()
         }
         .background(Color.white)
-        .fullScreenCover(isPresented: $isShowingForgotPassword) {
-            ForgotPasswordView(isShowingForgotPassword: $isShowingForgotPassword)
-                .environmentObject(authService)
-        }
     }
     
-    private func signIn() {
+    private func sendPasswordReset() {
         Task {
-            await authService.signIn(email: email, password: password)
-        }
-    }
-}
-
-// Helper extension for placeholder text
-extension View {
-    func placeholder<Content: View>(
-        when shouldShow: Bool,
-        alignment: Alignment = .leading,
-        @ViewBuilder placeholder: () -> Content
-    ) -> some View {
-        ZStack(alignment: alignment) {
-            placeholder().opacity(shouldShow ? 1 : 0)
-            self
+            await authService.resetPassword(email: email)
+            showSuccessMessage = true
         }
     }
 }

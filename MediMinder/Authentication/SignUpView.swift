@@ -4,14 +4,9 @@
 //
 //  Created by Apple23 on 04/04/25.
 //
-//
-//  SignUpView.swift
-//  MediMinder
-//
-//  Created by Apple23 on 04/04/25.
-//
 
 import SwiftUI
+import FirebaseAuth
 
 struct SignUpView: View {
     @Binding var isShowingSignUp: Bool
@@ -49,6 +44,12 @@ struct SignUpView: View {
             }
             .onAppear {
                 isAnimating = true
+                
+//                // Check if user is already authenticated on view appear
+//                if Auth.auth().currentUser != nil {
+//                    authService.isAuthenticated = true
+//                }
+
             }
             
             Text("MediMinder")
@@ -76,6 +77,7 @@ struct SignUpView: View {
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
                             .textContentType(.emailAddress)
+                            .disableAutocorrection(true)
                     }
                     .padding()
                     .background(
@@ -94,6 +96,7 @@ struct SignUpView: View {
                                 Text("Full Name").foregroundColor(.gray)
                             }
                             .foregroundColor(.primary)
+                            .autocapitalization(.words)
                     }
                     .padding()
                     .background(

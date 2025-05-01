@@ -5,6 +5,13 @@
 //  Created by Apple23 on 04/04/25.
 //
 
+//
+//  AuthenticationView.swift
+//  MediMinder
+//
+//  Created by Apple23 on 04/04/25.
+//
+
 import SwiftUI
 
 struct AuthenticationView: View {

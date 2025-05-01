@@ -374,3 +374,4 @@ struct EmptyStateView: View {
         }
     }
 }
+
